@@ -63,7 +63,7 @@ jobs:
     name: Build AAPS
     runs-on: ubuntu-latest
     steps:
-     - name: Decode Secrets Keystore Set and Oauth2 to Env
+      - name: Decode Secrets Keystore Set and Oauth2 to Env
         env:
           SECRET_KEYSTORE_SET: ${{ secrets.KEYSTORE_SET }}
           SECRET_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -83,7 +83,6 @@ jobs:
           else
             echo "ℹ️ KEYSTORE_SET not provided, processing separate secrets safely..."
             
-            # Use EOF syntax to handle multiline base64 safely
             echo "KEYSTORE_BASE64<<EOF" >> $GITHUB_ENV
             echo "$SECRET_BASE64" >> $GITHUB_ENV
             echo "EOF" >> $GITHUB_ENV
