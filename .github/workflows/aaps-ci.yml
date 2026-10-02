@@ -63,36 +63,36 @@ jobs:
     name: Build AAPS
     runs-on: ubuntu-latest
     steps:
-      - name: Decode Secrets Keystore Set and Oauth2 to Env
+     - name: Decode Secrets Keystore Set and Oauth2 to Env
+        env:
+          SECRET_KEYSTORE_SET: ${{ secrets.KEYSTORE_SET }}
+          SECRET_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          SECRET_STORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          SECRET_ALIAS: ${{ secrets.KEY_ALIAS }}
+          SECRET_KEY_PASS: ${{ secrets.KEY_PASSWORD }}
+          SECRET_GDRIVE: ${{ secrets.GDRIVE_OAUTH2 }}
         run: |
-          if [ -n "${{ secrets.KEYSTORE_SET }}" ]; then
+          if [ -n "$SECRET_KEYSTORE_SET" ]; then
             echo "🔐 Decoding KEYSTORE_SET..."
-            DECODED=$(echo "${{ secrets.KEYSTORE_SET }}" | base64 -d)
+            DECODED=$(echo "$SECRET_KEYSTORE_SET" | base64 -d)
 
-            KEYSTORE_BASE64=$(echo "$DECODED" | cut -d'|' -f1)
-            KEYSTORE_PASSWORD=$(echo "$DECODED" | cut -d'|' -f2)
-            KEY_ALIAS=$(echo "$DECODED" | cut -d'|' -f3)
-            KEY_PASSWORD=$(echo "$DECODED" | cut -d'|' -f4)
-
-            echo "KEYSTORE_BASE64=$KEYSTORE_BASE64" >> $GITHUB_ENV
-            echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> $GITHUB_ENV
-            echo "KEY_ALIAS=$KEY_ALIAS" >> $GITHUB_ENV
-            echo "KEY_PASSWORD=$KEY_PASSWORD" >> $GITHUB_ENV
-
-            echo "::add-mask::$KEYSTORE_BASE64"
-            echo "::add-mask::$KEYSTORE_PASSWORD"
-            echo "::add-mask::$KEY_ALIAS"
-            echo "::add-mask::$KEY_PASSWORD"
-
-            echo "✅ Keystore parameters extracted from KEYSTORE_SET"
+            echo "KEYSTORE_BASE64=$(echo "$DECODED" | cut -d'|' -f1)" >> $GITHUB_ENV
+            echo "KEYSTORE_PASSWORD=$(echo "$DECODED" | cut -d'|' -f2)" >> $GITHUB_ENV
+            echo "KEY_ALIAS=$(echo "$DECODED" | cut -d'|' -f3)" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=$(echo "$DECODED" | cut -d'|' -f4)" >> $GITHUB_ENV
           else
-            echo "ℹ️ KEYSTORE_SET not provided, using separate secrets."
-            echo "KEYSTORE_BASE64=${{ secrets.KEYSTORE_BASE64 }}" >> $GITHUB_ENV
-            echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
-            echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
-            echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
+            echo "ℹ️ KEYSTORE_SET not provided, processing separate secrets safely..."
+            
+            # Use EOF syntax to handle multiline base64 safely
+            echo "KEYSTORE_BASE64<<EOF" >> $GITHUB_ENV
+            echo "$SECRET_BASE64" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+
+            echo "KEYSTORE_PASSWORD=$SECRET_STORE_PASS" >> $GITHUB_ENV
+            echo "KEY_ALIAS=$SECRET_ALIAS" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=$SECRET_KEY_PASS" >> $GITHUB_ENV
           fi
-          echo "GDRIVE_OAUTH2=${{ secrets.GDRIVE_OAUTH2 }}" >> $GITHUB_ENV
+          echo "GDRIVE_OAUTH2=$SECRET_GDRIVE" >> $GITHUB_ENV
 
       - name: Check Secrets
         run: |
