@@ -61,7 +61,8 @@ on:
 jobs:
   build:
     name: Build AAPS
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
     steps:
       - name: Decode Secrets Keystore Set and Oauth2 to Env
         env:
@@ -253,18 +254,21 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build APKs
+        timeout-minutes: 90
         run: |
-              ./gradlew :app:assemble${{ env.BUILD_VARIANT }} :wear:assemble${{ env.BUILD_VARIANT }} \
-              -Dorg.gradle.jvmargs="-Xmx8g -XX:+UseParallelGC -Xss1024m" \
-              -Dkotlin.daemon.jvm.options="-Xmx2g" \
-              -Dkotlin.compiler.execution.strategy="in-process" \
-              -Dorg.gradle.daemon=true \
-              -Dorg.gradle.workers.max=8 \
-              -Dorg.gradle.caching=true \
-              -Pandroid.injected.signing.store.file="$RUNNER_TEMP/keystore/keystore.jks" \
-              -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
-              -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
-              -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+          echo "ℹ️ Runner: $(nproc) CPUs, $(free -g | awk '/Mem:/{print $2}') GB RAM"
+          ./gradlew :app:assemble${{ env.BUILD_VARIANT }} :wear:assemble${{ env.BUILD_VARIANT }} \
+            --no-daemon \
+            --console=plain \
+            --stacktrace \
+            --max-workers="$(nproc)" \
+            -Dorg.gradle.jvmargs="-Xmx6g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC -Dfile.encoding=UTF-8" \
+            -Dorg.gradle.caching=true \
+            -Pkotlin.compiler.execution.strategy=in-process \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/keystore/keystore.jks" \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
 
       - name: Rename APKs with version
         run: |
